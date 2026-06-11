@@ -301,6 +301,15 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
+  # llama-server expone metricas Prometheus nativas en /metrics
+  # El callback "prometheus" de LiteLLM puede no funcionar en versiones recientes;
+  # usar el endpoint directo de llama-server es mas fiable.
+  - job_name: "llama-server"
+    static_configs:
+      - targets: ["192.168.1.123:8080"]   # IP del host Windows
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+
   - job_name: "litellm"
     static_configs:
       - targets: ["localhost:4000"]
@@ -342,11 +351,23 @@ sudo systemctl enable --now prometheus
 ### Verificar Prometheus
 
 ```bash
-# Interfaz web
+# Health check
 curl http://localhost:9090/-/healthy
 
-# Ver metricas de LiteLLM recogidas
-curl -s 'http://localhost:9090/api/v1/query?query=litellm_request_total' | python3 -m json.tool
+# Generar trafico para poblar los contadores
+for i in {1..3}; do
+  curl -s http://localhost:4000/v1/chat/completions \
+    -H "Authorization: Bearer sk-lab-master-2024" \
+    -H "Content-Type: application/json" \
+    -d '{"model":"qwen3-9b","messages":[{"role":"user","content":"di un numero /no_think"}],"max_tokens":30}' > /dev/null
+  echo "Peticion $i enviada"
+done
+
+sleep 15   # esperar el ciclo de scrape
+
+# Verificar metricas recogidas de llama-server
+curl -s 'http://localhost:9090/api/v1/query?query=llamacpp:tokens_predicted_total' | python3 -m json.tool | grep value
+curl -s 'http://localhost:9090/api/v1/query?query=llamacpp:prompt_tokens_total'    | python3 -m json.tool | grep value
 ```
 
 Accesible en el navegador de Windows en: `http://192.168.x.2:9090`
@@ -388,22 +409,23 @@ curl -s -X POST http://admin:admin@localhost:3000/api/datasources \
   }'
 ```
 
-### Dashboard LiteLLM
+### Paneles para llama-server
 
-Importar el dashboard oficial de LiteLLM desde Grafana:
+En Grafana: **Dashboards → New → Add visualization → selecciona Prometheus**.
 
-```bash
-curl -s -X POST http://admin:admin@localhost:3000/api/dashboards/import \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dashboard": {"id": null, "title": "LiteLLM Overview"},
-    "folderId": 0,
-    "overwrite": true,
-    "inputs": [{"name": "DS_PROMETHEUS", "type": "datasource", "pluginId": "prometheus", "value": "Prometheus"}]
-  }'
-```
+Queries PromQL recomendadas:
 
-O manualmente: Grafana UI → Dashboards → Import → ID **`20699`** (dashboard LiteLLM de la comunidad).
+| Panel | Query PromQL | Tipo |
+|---|---|---|
+| Tokens generados/s (TG) | `rate(llamacpp:tokens_predicted_total[1m])` | Time series |
+| Tokens prompt/s (PP) | `rate(llamacpp:prompt_tokens_total[1m])` | Time series |
+| KV cache utilization | `llamacpp:kv_cache_usage_ratio` | Gauge |
+| Peticiones activas | `llamacpp:requests_processing` | Stat |
+| Tokens generados acumulados | `llamacpp:tokens_predicted_total` | Stat |
+
+> El callback `prometheus` de LiteLLM puede no inicializarse en versiones recientes
+> (el endpoint `/metrics` devuelve vacio). Usar el endpoint nativo de llama-server
+> es la alternativa mas robusta y ademas ofrece metricas de inferencia mas detalladas.
 
 Grafana accesible desde Windows en: `http://192.168.x.2:3000`
 Credenciales iniciales: `admin / admin` (cambia en el primer login).
