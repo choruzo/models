@@ -283,4 +283,4 @@ sudo tail -f /var/log/nginx/access.log
 
 ---
 
-Siguiente: [LiteLLM — proxy multi-modelo](06-litellm.md) | [README](../README.md)
+Siguiente: [LiteLLM — proxy multi-modelo](06-litellm.md) | [Lab local](07-lab-local.md) | [README](../README.md)

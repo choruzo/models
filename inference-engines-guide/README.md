@@ -20,7 +20,9 @@ inference-engines-guide/
     ├── 02-ollama.md            ← Instalación y servidor Ollama
     ├── 03-llama-cpp.md         ← Instalación y servidor llama.cpp
     ├── 04-vllm.md              ← Instalación y servidor vLLM
-    └── 05-organizacion.md      ← Exponerlos a una organización (nginx, auth, red)
+    ├── 05-organizacion.md      ← Exponerlos a una organización (nginx, auth, red)
+    ├── 06-litellm.md           ← Proxy multi-modelo (routing, load balancing, claves)
+    └── 07-lab-local.md         ← Lab práctico: Windows + VM Ubuntu + Grafana/Prometheus
 ```
 
 ## Flujo general
@@ -32,7 +34,10 @@ Modelo (GGUF / HuggingFace / Ollama registry)
 Motor de inferencia  ←── llama-server | vLLM | Ollama
         │
         ▼  :8080 / :8000 / :11434
-Nginx reverse proxy  ←── TLS + autenticación API key
+LiteLLM Proxy        ←── routing, load balancing, claves por equipo
+        │
+        ▼  :4000
+Nginx reverse proxy  ←── TLS
         │
         ▼  https://llm.empresa.local
 Usuarios / aplicaciones internas
@@ -45,6 +50,8 @@ Usuarios / aplicaciones internas
 3. [llama.cpp — servidor optimizable](docs/03-llama-cpp.md)
 4. [vLLM — servidor de producción](docs/04-vllm.md)
 5. [Despliegue organizacional](docs/05-organizacion.md)
+6. [LiteLLM — proxy multi-modelo](docs/06-litellm.md)
+7. [Lab local — Windows + VM + Grafana](docs/07-lab-local.md)
 
 ---
 
