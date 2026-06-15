@@ -44,4 +44,5 @@ Write-Host ""
     --ubatch-size   512 `
     --host          "0.0.0.0" `
     --port          $Port `
-    --mlock
+    --mlock `
+    --metrics 
