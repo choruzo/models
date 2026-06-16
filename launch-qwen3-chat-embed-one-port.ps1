@@ -40,6 +40,8 @@ New-Item -ItemType Directory -Path $runDir -Force | Out-Null
 
 $chatLog   = Join-Path $runDir "chat.log"
 $embedLog  = Join-Path $runDir "embed.log"
+$chatErrLog  = Join-Path $runDir "chat.err.log"
+$embedErrLog = Join-Path $runDir "embed.err.log"
 
 $chatArgs = @(
     "--model",         $ChatModelPath,
@@ -77,17 +79,25 @@ Write-Host "  Embed endpoint  : 0.0.0.0:$EmbedInternalPort"
 Write-Host "  Logs            : $runDir"
 Write-Host ""
 
-$chatProc = Start-Process -FilePath $LlamaBin -ArgumentList $chatArgs -RedirectStandardOutput $chatLog -RedirectStandardError $chatLog -PassThru
-$embedProc = Start-Process -FilePath $LlamaBin -ArgumentList $embedArgs -RedirectStandardOutput $embedLog -RedirectStandardError $embedLog -PassThru
+$chatProc = Start-Process -FilePath $LlamaBin -ArgumentList $chatArgs -RedirectStandardOutput $chatLog -RedirectStandardError $chatErrLog -PassThru
+$embedProc = Start-Process -FilePath $LlamaBin -ArgumentList $embedArgs -RedirectStandardOutput $embedLog -RedirectStandardError $embedErrLog -PassThru
+
+if (($null -eq $chatProc) -or ($null -eq $embedProc)) {
+    Write-Error "No se pudieron iniciar uno o ambos procesos llama-server. Revisa los logs en: $runDir"
+    exit 1
+}
 
 Write-Host "Proceso chat PID : $($chatProc.Id)"
 Write-Host "Proceso embed PID: $($embedProc.Id)"
 Write-Host ""
+$chatCurl = "  curl http://0.0.0.0:$ChatInternalPort/v1/chat/completions -H `"Content-Type: application/json`" -d '{`"messages`": [{`"role`": `"user`", `"content`": `"hola`"}]}'"
+$embedCurl = "  curl http://0.0.0.0:$EmbedInternalPort/v1/embeddings -H `"Content-Type: application/json`" -d '{`"input`": `"texto de prueba`"}'"
+
 Write-Host "Prueba rapida (chat):"
-Write-Host "  curl http://0.0.0.0:$ChatInternalPort/v1/chat/completions -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"hola\"}]}'"
+Write-Host $chatCurl
 Write-Host ""
 Write-Host "Prueba rapida (embeddings):"
-Write-Host "  curl http://0.0.0.0:$EmbedInternalPort/v1/embeddings -H 'Content-Type: application/json' -d '{\"input\":\"texto de prueba\"}'"
+Write-Host $embedCurl
 Write-Host ""
 Write-Host "Pulsa Ctrl+C para detener todo."
 
