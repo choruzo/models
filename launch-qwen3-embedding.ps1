@@ -2,12 +2,12 @@
 # Lanzador de Qwen3-Embedding-0.6B-f16 con llama.cpp
 #
 # Uso:
-#   .\launch-qwen3-embedding.ps1 [-Port 8081] [-Threads 8] [-Host 0.0.0.0]
+#   .\launch-qwen3-embedding.ps1 [-Port 8081] [-Threads 8] [-BindHost 0.0.0.0]
 
 param(
     [int]$Port = 8081,
     [int]$Threads = 8,
-    [string]$Host = "0.0.0.0"
+    [string]$BindHost = "0.0.0.0"
 )
 
 # Rutas
@@ -19,12 +19,12 @@ if (-not (Test-Path $ModelPath)) { Write-Error "No se encuentra el modelo en: $M
 
 Write-Host ""
 Write-Host "  Modelo  : $ModelPath"
-Write-Host "  Host    : $Host"
+Write-Host "  Host    : $BindHost"
 Write-Host "  Puerto  : $Port"
 Write-Host "  Threads : $Threads"
 Write-Host ""
 Write-Host "Prueba rapida (embeddings):"
-Write-Host "  curl http://${Host}:$Port/v1/embeddings -H `"Content-Type: application/json`" -d '{`"input`": `"texto de prueba`"}'"
+Write-Host "  curl http://${BindHost}:$Port/v1/embeddings -H `"Content-Type: application/json`" -d '{`"input`": `"texto de prueba`"}'"
 Write-Host ""
 
 & $LlamaBin `
@@ -33,7 +33,7 @@ Write-Host ""
     --ctx-size      8192 `
     --n-gpu-layers  99 `
     --threads       $Threads `
-    --host          $Host `
+    --host          $BindHost `
     --port          $Port `
     --mlock `
     --metrics
