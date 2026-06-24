@@ -69,7 +69,6 @@ Write-Host ""
 $args = @(
     "--model",                $ModelPath,
     "--alias",                "gemma-4-12b",
-    "--chat-template",        "gemma",
     "--jinja",
     "--reasoning",            "auto",
     "--ctx-size",             $CtxSize,
@@ -87,7 +86,7 @@ $args = @(
     "--cont-batching",
     "--kv-unified",
     "--cache-prompt",
-    "--host",                 "127.0.0.1",
+    "--host",                 "0.0.0.0",
     "--port",                 $Port,
     "--metrics",
     "--mlock"
